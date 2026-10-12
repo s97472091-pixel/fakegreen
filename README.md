@@ -82,6 +82,42 @@ fakegreen · last commit (8797f43) · 4/4 files · +5 −13
 Exit code `1`. Replay it with `asciinema play docs/demo.cast`, or rebuild it with
 `scripts/make-demo-repo.sh /tmp/fakegreen-demo && cd /tmp/fakegreen-demo && fakegreen --last-commit`.
 
+The same script can build the scenario in **Python**, so the demo is not TypeScript-only. The pytest project gets an
+honest commit, then an agent commit that skips a test with `@pytest.mark.skip`, weakens an `assert`, adds
+`# type: ignore`, deletes a test file, teaches `src/cart.py` to branch on `"pytest" in sys.modules`, and appends
+`|| true` to the CI step:
+
+```sh
+scripts/make-demo-repo.sh /tmp/fakegreen-demo-py python
+cd /tmp/fakegreen-demo-py && fakegreen --last-commit
+```
+
+```text
+fakegreen · last commit (fb278ef) · 4/4 files · +9 −15
+
+   HIGH  .github/workflows/ci.yml:12  ci-failure-ignored
+         Failure ignored with `|| true` on a test/check command
+
+   HIGH  src/cart.py:12  test-env-special-case
+         Non-test code branches on the test env ("pytest" in sys.modules); tests skip the real path
+
+   LOW   src/cart.py:18  suppression-added
+         Checker silenced with # type: ignore (scoped to a specific rule)
+
+   HIGH  test/test_cart.py:8  test-skipped
+         Test skipped with @pytest.mark.skip
+
+   HIGH  test/test_cart.py:14  assertion-weakened
+         Specific assertion replaced with a vague one
+
+   HIGH  test/test_checkout.py  test-file-deleted
+         Test file deleted (2 test cases removed)
+
+  5 high · 0 medium · 1 low  ✖ fake green detected (fail-on: high) · 83ms
+```
+
+Any other scenario name prints the usage and exits `2`. The command without a scenario name behaves exactly as before.
+
 ## Install
 
 ```sh
